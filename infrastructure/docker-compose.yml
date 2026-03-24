@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    env_file:
+      - ../.env  # Mówimy Dockerowi: "Weź hasła z tego pliku jeden poziom wyżej"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Tworzymy trwały dysk
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "8080:80"
+    env_file:
+      - ../.env
+    depends_on:
+      - postgres  # pgAdmin musi poczekać, aż baza wstanie
+    restart: unless-stopped
+
+volumes:
+  postgres_data:  # Definicja naszego bezpiecznego miejsca na dysku
