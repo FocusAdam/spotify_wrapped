@@ -6,9 +6,9 @@ services:
     ports:
       - "5432:5432"
     env_file:
-      - ../.env  # Mówimy Dockerowi: "Weź hasła z tego pliku jeden poziom wyżej"
+      - ../.env
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # Tworzymy trwały dysk
+      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
   pgadmin:
@@ -18,8 +18,8 @@ services:
     env_file:
       - ../.env
     depends_on:
-      - postgres  # pgAdmin musi poczekać, aż baza wstanie
+      - postgres
     restart: unless-stopped
 
 volumes:
-  postgres_data:  # Definicja naszego bezpiecznego miejsca na dysku
+  postgres_data:
