@@ -12,9 +12,11 @@ class SpotifyFileExtractor:
     def extract(self) -> list[SpotifyTrack]:
         valid_tracks = []
         file_patterns = self.data_folder.glob("Streaming_History_Audio_*.json")
-        logger.info(f"Found {len(list(file_patterns))} potential data files")
+        files = list(file_patterns)
+        logger.info(f"Found {len(files)} potential data files, {file_patterns}")
 
-        for file_path in file_patterns:
+        for file_path in files:
+            logger.info("Test if we are here")
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
