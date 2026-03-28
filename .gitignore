@@ -1,9 +1,7 @@
-
+.clinerules/
 venv/
 __pycache__/
-
 .env
-
 data/
 *.csv
 *.json
