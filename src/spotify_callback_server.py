@@ -1,16 +1,3 @@
-"""
-Spotify OAuth Callback Server
-
-This module provides a simple HTTP server that listens for Spotify OAuth callbacks
-and automatically exchanges the authorization code for tokens.
-
-Why a separate server?
-- Streamlit doesn't natively handle OAuth callbacks well
-- This server runs in a background thread and captures the callback
-- Automatically exchanges the code for tokens
-- Redirects user back to the Streamlit app with success message
-"""
-
 import threading
 import http.server
 import socketserver
@@ -18,21 +5,8 @@ import urllib.parse
 from loguru import logger
 from spotify_auth import get_auth_manager
 
-
 class SpotifyCallbackHandler(http.server.BaseHTTPRequestHandler):
-    """
-    HTTP request handler for Spotify OAuth callbacks.
-    
-    This handler listens for the redirect from Spotify after user authorization
-    and automatically exchanges the code for tokens.
-    """
-    
     def do_GET(self):
-        """
-        Handle GET requests to the callback server.
-        
-        Expected URL format: http://127.0.0.1:8080/callback?code=AQDx...
-        """
         try:
             # Parse the URL and query parameters
             parsed_url = urllib.parse.urlparse(self.path)
@@ -176,21 +150,7 @@ class SpotifyCallbackHandler(http.server.BaseHTTPRequestHandler):
 
 
 class SpotifyCallbackServer:
-    """
-    Manages the Spotify OAuth callback server.
-    
-    This class starts a background HTTP server that listens for Spotify OAuth
-    callbacks and automatically exchanges authorization codes for tokens.
-    """
-    
     def __init__(self, host='127.0.0.1', port=8081):
-        """
-        Initialize the callback server.
-        
-        Args:
-            host: Host to listen on (default: 127.0.0.1)
-            port: Port to listen on (default: 8080)
-        """
         self.host = host
         self.port = port
         self.server = None
