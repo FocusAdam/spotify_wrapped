@@ -6,3 +6,4 @@ data/
 *.csv
 *.json
 *.parquet
+.cache
