@@ -5,6 +5,7 @@ from spotipy import Spotify
 from models import SpotifyTrack
 
 
+
 class SpotifyAPIExtractor:
     
     def __init__(self, spotify_client: Spotify):

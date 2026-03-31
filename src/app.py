@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import time
 from dotenv import load_dotenv
-from dashboard_logic import create_database_engine, fetch_top_artists, create_top_artists_chart
+from dashboard_logic import create_database_engine, fetch_top_artists, create_top_artists_chart, prepare_top_tracks_data
 from chat_logic import get_ai_response
 from spotify_auth import get_auth_manager
 from spotify_api_extractor import get_api_extractor
@@ -178,7 +178,18 @@ with tab3:
         # Initialize auth manager
         auth_manager = get_auth_manager()
         
-        # Check if user is already authenticated
+        # Add debug info and force login option
+        # with st.expander("🔧 Opcje debugowania", expanded=False):
+        #     col1, col2 = st.columns(2)
+        #     with col1:
+        #         if st.button("🗑️ Wyczyść cache logowania", use_container_width=True):
+        #             auth_manager.logout()
+        #             st.success("Cache wyczyszczony! Odśwież stronę.")
+        #             st.rerun()
+        #     with col2:
+        #         force_login = st.checkbox("Wymuś ekran logowania", value=False)
+        
+        # Check if user is already authenticated (and not forcing login)
         if auth_manager.is_authenticated():
             st.success("✅ Jesteś zalogowany do Spotify!")
             
@@ -201,60 +212,59 @@ with tab3:
             
             st.write("---")
             
-            # Fetch data options
-            st.markdown("### 📥 Pobierz dane z Spotify")
+        
+            st.write("---")
             
-            col1, col2 = st.columns(2)
+            # Top Tracks Visualization Section
+            st.markdown("### Wizualizacja Top Utworów")
+            st.markdown("Wybierz ile top utworów chcesz zobaczyć i z jakiego okresu.")
             
+            # Initialize session state for visualization
+            if 'viz_tracks' not in st.session_state:
+                st.session_state.viz_tracks = None
+                st.session_state.viz_num_tracks = 10
+                st.session_state.viz_time_range = 'medium_term'
+            
+            # Slider for number of tracks
+            col1, col2 = st.columns([2, 1])
             with col1:
-                if st.button("🕐 Ostatnio słuchane", use_container_width=True):
-                    with st.spinner("Pobieranie ostatnio słuchanych utworów..."):
-                        tracks = api_extractor.extract_recently_played(limit=50)
-                        if tracks:
-                            engine = get_engine()
-                            loader = PostgresLoader()
-                            loader.load(tracks)
-                            st.success(f"✅ Pobrano {len(tracks)} utworów!")
-                            st.rerun()
-                        else:
-                            st.warning("Nie znaleziono utworów.")
-                
-                if st.button("⭐ Top utwory (6 miesięcy)", use_container_width=True):
-                    with st.spinner("Pobieranie top utworów..."):
-                        tracks = api_extractor.extract_top_tracks(time_range='medium_term', limit=50)
-                        if tracks:
-                            engine = get_engine()
-                            loader = PostgresLoader()
-                            loader.load(tracks)
-                            st.success(f"✅ Pobrano {len(tracks)} utworów!")
-                            st.rerun()
-                        else:
-                            st.warning("Nie znaleziono utworów.")
-            
+                num_tracks = st.slider("Liczba utworów do wyświetlenia", min_value=5, max_value=50, value=10, step=5)
             with col2:
-                if st.button("❤️ Polubione utwory", use_container_width=True):
-                    with st.spinner("Pobieranie polubionych utworów..."):
-                        tracks = api_extractor.extract_saved_tracks(limit=50)
-                        if tracks:
-                            engine = get_engine()
-                            loader = PostgresLoader()
-                            loader.load(tracks)
-                            st.success(f"✅ Pobrano {len(tracks)} utworów!")
-                            st.rerun()
-                        else:
-                            st.warning("Nie znaleziono utworów.")
-                
-                if st.button("📊 Top utwory (wszystkie)", use_container_width=True):
-                    with st.spinner("Pobieranie top utworów (all time)..."):
-                        tracks = api_extractor.extract_top_tracks(time_range='long_term', limit=50)
-                        if tracks:
-                            engine = get_engine()
-                            loader = PostgresLoader()
-                            loader.load(tracks)
-                            st.success(f"✅ Pobrano {len(tracks)} utworów!")
-                            st.rerun()
-                        else:
-                            st.warning("Nie znaleziono utworów.")
+                time_range = st.selectbox(
+                    "Okres czasu",
+                    options=[
+                        ('short_term', 'Ostatnie 4 tygodnie'),
+                        ('medium_term', 'Ostatnie 6 miesięcy'),
+                        ('long_term', 'Cały czas')
+                    ],
+                    format_func=lambda x: x[1],
+                    index=1
+                )[0]
+            
+            # Only fetch new data when button is clicked
+            if st.button("🎵 Pokaż Top Utwory", use_container_width=True, type="primary"):
+                with st.spinner(f"Pobieranie top {num_tracks} utworów..."):
+                    tracks = api_extractor.extract_top_tracks(time_range=time_range, limit=num_tracks)
+                    if tracks:
+                        st.session_state.viz_tracks = tracks
+                        st.session_state.viz_num_tracks = num_tracks
+                        st.session_state.viz_time_range = time_range
+                    else:
+                        st.warning("Nie znaleziono utworów dla wybranego okresu.")
+            
+            # Display table from session state (persists across reruns)
+            if st.session_state.viz_tracks:
+                df_tracks = prepare_top_tracks_data(st.session_state.viz_tracks, st.session_state.viz_num_tracks)
+                st.dataframe(
+                    df_tracks,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Rank": st.column_config.NumberColumn("Rank", width="small"),
+                        "Track": st.column_config.TextColumn("Utwór", width="large"),
+                        "Artist": st.column_config.TextColumn("Artysta", width="medium")
+                    }
+                )
             
             st.write("---")
             

@@ -57,3 +57,14 @@ def create_top_artists_chart(df: pd.DataFrame) -> px.bar:
     )
     fig.update_layout(yaxis={'categoryorder': 'total ascending'}, showlegend=False)
     return fig
+
+def prepare_top_tracks_data(tracks: list, limit: int) -> pd.DataFrame:
+    track_data = []
+    for i, track in enumerate(tracks, 1):
+        track_data.append({
+            'Rank': i,
+            'Track': track.master_metadata_track_name,
+            'Artist': track.master_metadata_album_artist_name,
+        })
+    
+    return pd.DataFrame(track_data)
